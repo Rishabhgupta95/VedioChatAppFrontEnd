@@ -121,14 +121,14 @@ const RoomPage = () => {
 
   return (
     <div>
-     {!remoteStream && (
+     {/* {!remoteStream && ( */}
       <div>
         <h1>Room Page</h1>
         <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
         {myStream && <button onClick={sendStreams}>Send Stream</button>}
         {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
       </div>
-     )}
+     {/* )} */}
       {myStream && (
         <>
           <h1>My Stream</h1>
