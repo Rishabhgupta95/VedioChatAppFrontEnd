@@ -91,6 +91,34 @@
   transform: translateY(-2px);
 }
 
+.btn-warning {
+  background-color: #f59e0b;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.btn-warning:hover {
+  background-color: #d97706;
+  transform: translateY(-2px);
+}
+
+.icon-btn {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.icon-btn:hover svg {
+  transform: scale(1.1);
+}
+
 /* --- Lobby Screen --- */
 .lobby-container {
   width: 100%;
