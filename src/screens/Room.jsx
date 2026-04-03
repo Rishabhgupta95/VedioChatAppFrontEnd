@@ -1,12 +1,16 @@
 import React, { useEffect, useCallback, useState } from "react";
 import peer from "../service/Peer";
 import { useSocket } from "../context/SocketProvider";
+import { useNavigate } from "react-router-dom";
 
 const RoomPage = () => {
   const socket = useSocket();
+  const navigate = useNavigate();
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
+  const [isStreamSent, setIsStreamSent] = useState(false);
+  const [isVideoPaused, setIsVideoPaused] = useState(false);
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
@@ -48,6 +52,7 @@ const RoomPage = () => {
         peer.peer.addTrack(track, myStream);
       }
     }
+    setIsStreamSent(true);
   }, [myStream]);
 
   const handleCallAccepted = useCallback(
@@ -58,6 +63,23 @@ const RoomPage = () => {
     },
     [sendStreams]
   );
+
+  const toggleVideo = useCallback(() => {
+    if (myStream) {
+      const videoTrack = myStream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoPaused(!videoTrack.enabled);
+      }
+    }
+  }, [myStream]);
+
+  const handleEndCall = useCallback(() => {
+    if (myStream) {
+      myStream.getTracks().forEach((track) => track.stop());
+    }
+    window.location.href = "/";
+  }, [myStream]);
 
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.getOffer();
@@ -120,40 +142,84 @@ const RoomPage = () => {
   ]);
 
   return (
-    <div>
-     {/* {!remoteStream && ( */}
-      <div>
-        <h1>Room Page</h1>
-        <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
-        {myStream && <button onClick={sendStreams}>Send Stream</button>}
-        {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
+    <div className="room-layout">
+      {/* Header with Connection Status */}
+      <div className="room-header">
+        <div className="status-badge">
+          <div className={`status-dot ${remoteSocketId ? "connected" : "disconnected"}`}></div>
+          <span>{remoteSocketId ? "Peer Connected" : "Waiting for Peer..."}</span>
+        </div>
       </div>
-     {/* )} */}
-      {myStream && (
-        <>
-          <h1>My Stream</h1>
-          <video
-            autoPlay
-            muted
-            style={{ height: "10vh", width: "20vw", backgroundColor: "black" }}
-            ref={(video) => {
-              if (video) video.srcObject = myStream;
-            }}
-          />
-        </>
-      )}
-      {remoteStream && (
-        <>
-          <h1>Remote Stream</h1>
-          <video
-            autoPlay
-            style={{ height: "100vh", width: "100vw", backgroundColor: "black" }}
-            ref={(video) => {
-              if (video) video.srcObject = remoteStream;
-            }}
-          />
-        </>
-      )}
+
+      {/* Video Grid */}
+      <div className="video-grid">
+        {!myStream && !remoteStream && (
+           <div className="empty-state">
+              <div className="glass-panel" style={{padding: '3rem', textAlign: 'center'}}>
+                 <h2 style={{color: 'white', marginBottom: '1rem'}}>Ready to join?</h2>
+                 <p style={{marginBottom: '2rem'}}>The room is active. Start your camera to begin the call.</p>
+                 {remoteSocketId && <button className="btn btn-primary" onClick={handleCallUser}>Start Call</button>}
+                 {!remoteSocketId && <button className="btn btn-primary" style={{opacity: 0.5, cursor: 'not-allowed'}}>Wait for someone to join</button>}
+              </div>
+           </div>
+        )}
+
+        {remoteStream && (
+          <div className="video-container">
+            <video
+              className="video-element"
+              autoPlay
+              playsInline
+              ref={(video) => {
+                if (video) video.srcObject = remoteStream;
+              }}
+            />
+            <div className="video-label">Remote Stream</div>
+          </div>
+        )}
+
+        {myStream && (
+          <div className={`video-container ${remoteStream ? "is-pip" : ""}`}>
+            <video
+              className="video-element"
+              autoPlay
+              playsInline
+              muted
+              ref={(video) => {
+                if (video) video.srcObject = myStream;
+              }}
+            />
+            <div className="video-label">My Stream</div>
+          </div>
+        )}
+      </div>
+
+      {/* Floating Controls Bar */}
+      <div className="controls-bar glass-panel">
+        {myStream && !isStreamSent && (
+          <button className="btn btn-success" onClick={sendStreams}>
+            Send Stream
+          </button>
+        )}
+        {myStream && (
+           <>
+             <button 
+               className="btn btn-primary" 
+               onClick={toggleVideo} 
+               style={{ backgroundColor: isVideoPaused ? '#f59e0b' : '', boxShadow: isVideoPaused ? 'none' : ''}}>
+               {isVideoPaused ? "Play Video" : "Pause Video"}
+             </button>
+             <button className="btn btn-danger" onClick={handleEndCall}>
+               End Call
+             </button>
+           </>
+        )}
+        {remoteSocketId && !myStream && (
+           <button className="btn btn-primary" onClick={handleCallUser}>
+             CALL
+           </button>
+        )}
+      </div>
     </div>
   );
 };
