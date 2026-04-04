@@ -1,12 +1,13 @@
 import React, { useEffect, useCallback, useState } from "react";
 import peer from "../service/Peer";
 import { useSocket } from "../context/SocketProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const RoomPage = () => {
   const socket = useSocket();
-  const navigate = useNavigate();
-  const [remoteSocketId, setRemoteSocketId] = useState(null);
+  const location = useLocation();
+  const isAdmin = location.state?.isAdmin;
+  const [remoteSocketId, setRemoteSocketId] = useState(location.state?.remoteSocketId || null);
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [isStreamSent, setIsStreamSent] = useState(false);
@@ -60,9 +61,8 @@ const RoomPage = () => {
     async ({ ans }) => {
       await peer.setRemoteDescription(ans);
       console.log("Call Accepted!");
-      sendStreams();
     },
-    [sendStreams]
+    []
   );
 
   const toggleVideo = useCallback(() => {
@@ -198,7 +198,8 @@ const RoomPage = () => {
             <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
               <h2 style={{ color: 'white', marginBottom: '1rem' }}>Ready to join?</h2>
               <p style={{ marginBottom: '2rem' }}>The room is active. Start your camera to begin the call.</p>
-              {remoteSocketId && <button className="btn btn-primary" onClick={handleCallUser}>Start Call</button>}
+              {isAdmin && remoteSocketId && <button className="btn btn-primary" onClick={handleCallUser}>Start Call</button>}
+              {!isAdmin && remoteSocketId && <button className="btn btn-primary" style={{ opacity: 0.5, cursor: 'not-allowed' }}>Wait for host to start call</button>}
               {!remoteSocketId && <button className="btn btn-primary" style={{ opacity: 0.5, cursor: 'not-allowed' }}>Wait for someone to join</button>}
             </div>
           </div>
@@ -207,7 +208,7 @@ const RoomPage = () => {
         {remoteStream && (
           <div className="video-container">
             <video
-              className="video-element"
+              className="video-element  video-element local-video"
               autoPlay
               playsInline
               ref={(video) => {
@@ -221,7 +222,7 @@ const RoomPage = () => {
         {myStream && (
           <div className={`video-container ${remoteStream ? "is-pip" : ""}`}>
             <video
-              className="video-element"
+              className="video-element local-video"
               autoPlay
               playsInline
               muted
@@ -236,7 +237,7 @@ const RoomPage = () => {
 
       {/* Floating Controls Bar */}
       <div className="controls-bar glass-panel">
-        {myStream && !isStreamSent && (
+        {myStream && !isStreamSent && (isAdmin || remoteStream) && (
           <button
             className="btn btn-success icon-btn"
             onClick={sendStreams}

@@ -223,6 +223,11 @@
   object-fit: cover;
 }
 
+.video-element.local-video {
+  transform: scaleX(-1);
+  
+}
+
 /* Picture-in-Picture logic */
 .video-container.is-pip {
   position: absolute;

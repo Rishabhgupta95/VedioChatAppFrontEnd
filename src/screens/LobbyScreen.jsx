@@ -16,9 +16,9 @@ const LobbyScreen = () => {
   }, [email, room, socket]);
 
   const handleJoinRoom = useCallback((data) => {
-    const { email, room } = data;
-    navigate(`/room/${room}`);
-  }, [navigate])
+    const { room, isAdmin, remoteSocketId } = data;
+    navigate(`/room/${room}`, { state: { isAdmin, remoteSocketId } });
+  }, [navigate]);
 
   useEffect(() => {
     socket.on("room:join", handleJoinRoom);
